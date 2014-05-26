@@ -149,7 +149,9 @@ private:
 
     // odometry (x,y)
     ros::Time last_receive_time;
+    nav_msgs::Odometry odo_msg;
     double odometry[2];
+    bool enable_odom;
 };
 
 #endif

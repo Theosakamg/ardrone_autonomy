@@ -110,6 +110,8 @@ ARDroneDriver::ARDroneDriver()
 
     // reset odometry
     odometry[0] = odometry[1] = 0;
+    ros::param::param("~enable_odom",enable_odom,false);
+
 }
 
 ARDroneDriver::~ARDroneDriver()
@@ -736,7 +738,10 @@ void ARDroneDriver::publish_navdata(navdata_unpacked_t &navdata_raw, const ros::
 
     // IMU - Rotation Matrix
     tf::Quaternion q;
-    q.setRPY(legacynavdata_msg.rotZ * _DEG2RAD, legacynavdata_msg.rotY * _DEG2RAD, legacynavdata_msg.rotX * _DEG2RAD);
+    q.setRPY(
+            legacynavdata_msg.rotZ * _DEG2RAD,
+            legacynavdata_msg.rotY * _DEG2RAD,
+            legacynavdata_msg.rotX * _DEG2RAD);
     tf::quaternionTFToMsg(q, imu_msg.orientation);
 
     // IMU - Gyro (Gyro is being sent in deg/sec)
@@ -778,43 +783,51 @@ void ARDroneDriver::publish_tf()
     tf_odom.stamp_ = ros::Time::now();
     tf_broad.sendTransform(tf_base_front);
     tf_broad.sendTransform(tf_base_bottom);
-    tf_broad.sendTransform(tf_odom);
+    if (enable_odom) {
+        tf_broad.sendTransform(tf_odom);
+    }
 }
 
 void ARDroneDriver::publish_odometry(navdata_unpacked_t &navdata_raw, const ros::Time &navdata_receive_time)
 {
-  if (last_receive_time.isValid()) {
-    double delta_t = (navdata_receive_time - last_receive_time).toSec();
-    odometry[0] += ((cos((navdata_raw.navdata_demo.psi/180000) * M_PI) * navdata_raw.navdata_demo.vx - sin((navdata_raw.navdata_demo.psi/180000) * M_PI) * -navdata_raw.navdata_demo.vy) * delta_t) / 1000.0;
-    odometry[1] += ((sin((navdata_raw.navdata_demo.psi/180000) * M_PI) * navdata_raw.navdata_demo.vx + cos((navdata_raw.navdata_demo.psi/180000) * M_PI) * -navdata_raw.navdata_demo.vy) * delta_t) / 1000.0;
-  }
-  last_receive_time = navdata_receive_time;
+    if (enable_odom)
+    {
+        if (last_receive_time.isValid())
+        {
+            double delta_t = (navdata_receive_time - last_receive_time).toSec();
+            odometry[0] += ((cos((navdata_raw.navdata_demo.psi/180000) * M_PI) * navdata_raw.navdata_demo.vx - sin((navdata_raw.navdata_demo.psi/180000) * M_PI) * -navdata_raw.navdata_demo.vy) * delta_t) / 1000.0;
+            odometry[1] += ((sin((navdata_raw.navdata_demo.psi/180000) * M_PI) * navdata_raw.navdata_demo.vx + cos((navdata_raw.navdata_demo.psi/180000) * M_PI) * -navdata_raw.navdata_demo.vy) * delta_t) / 1000.0;
+        }
+        last_receive_time = navdata_receive_time;
 
-  nav_msgs::Odometry odo_msg;
-  odo_msg.header.stamp = navdata_receive_time;
-  odo_msg.header.frame_id = "odom";
-  odo_msg.child_frame_id = droneFrameBase;
+        odo_msg.header.stamp = navdata_receive_time;
+        odo_msg.header.frame_id = "odom";
+        odo_msg.child_frame_id = droneFrameBase;
 
-  odo_msg.pose.pose.position.x = odometry[0];
-  odo_msg.pose.pose.position.y = odometry[1];
-  odo_msg.pose.pose.position.z = navdata_raw.navdata_demo.altitude / 1000;
-  odo_msg.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(navdata_raw.navdata_demo.phi / 180000.0 * M_PI, -navdata_raw.navdata_demo.theta / 180000.0 * M_PI, -navdata_raw.navdata_demo.psi / 180000.0 * M_PI);
+        odo_msg.pose.pose.position.x = odometry[0];
+        odo_msg.pose.pose.position.y = odometry[1];
+        odo_msg.pose.pose.position.z = navdata_raw.navdata_demo.altitude / 1000;
+        odo_msg.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(
+              navdata_raw.navdata_demo.phi / 180000.0 * M_PI,
+              -navdata_raw.navdata_demo.theta / 180000.0 * M_PI,
+              -navdata_raw.navdata_demo.psi / 180000.0 * M_PI);
 
-  odo_msg.twist.twist.linear.x = navdata_raw.navdata_demo.vx / 1000.0;
-  odo_msg.twist.twist.linear.y = -navdata_raw.navdata_demo.vy / 1000.0;
-  odo_msg.twist.twist.linear.z = -navdata_raw.navdata_demo.vz / 1000.0;
-  
-  odo_pub.publish(odo_msg);
+        odo_msg.twist.twist.linear.x = navdata_raw.navdata_demo.vx / 1000.0;
+        odo_msg.twist.twist.linear.y = -navdata_raw.navdata_demo.vy / 1000.0;
+        odo_msg.twist.twist.linear.z = -navdata_raw.navdata_demo.vz / 1000.0;
 
-  tf::Vector3 t;
-  tf::pointMsgToTF(odo_msg.pose.pose.position, t);
-  tf::Quaternion q;
-  tf::quaternionMsgToTF(odo_msg.pose.pose.orientation, q);
-  
-  tf_odom.frame_id_ = "odom";
-  tf_odom.child_frame_id_ = droneFrameBase;
-  tf_odom.setOrigin(t);
-  tf_odom.setRotation(q);
+        //odo_pub.publish(odo_msg);
+
+        tf::Vector3 t;
+        tf::pointMsgToTF(odo_msg.pose.pose.position, t);
+        tf::Quaternion q;
+        tf::quaternionMsgToTF(odo_msg.pose.pose.orientation, q);
+
+        tf_odom.frame_id_ = "odom";
+        tf_odom.child_frame_id_ = droneFrameBase;
+        tf_odom.setOrigin(t);
+        tf_odom.setRotation(q);
+    }
 }
 
 bool ARDroneDriver::imuReCalibCallback(std_srvs::Empty::Request &request, std_srvs::Empty::Response &response)

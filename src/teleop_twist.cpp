@@ -25,9 +25,9 @@ int32_t detect_disable_placeholder = 0;
 int32_t detect_enable_placeholder = 1;
 
 const LED_ANIMATION_IDS ledAnimMap[14] = {
-	BLINK_GREEN_RED, BLINK_GREEN, BLINK_RED, BLINK_ORANGE,
-	SNAKE_GREEN_RED, FIRE, STANDARD, RED, GREEN, RED_SNAKE,BLANK,
-	LEFT_GREEN_RIGHT_RED, LEFT_RED_RIGHT_GREEN, BLINK_STANDARD};
+        BLINK_GREEN_RED, BLINK_GREEN, BLINK_RED, BLINK_ORANGE,
+        SNAKE_GREEN_RED, FIRE, STANDARD, RED, GREEN, RED_SNAKE,BLANK,
+        LEFT_GREEN_RIGHT_RED, LEFT_RED_RIGHT_GREEN, BLINK_STANDARD};
 
 //ros service callback to set the camera channel
 bool setCamChannelCallback(ardrone_autonomy::CamSelect::Request& request, ardrone_autonomy::CamSelect::Response& response)
@@ -39,6 +39,7 @@ bool setCamChannelCallback(ardrone_autonomy::CamSelect::Request& request, ardron
     response.result = true;
     return true;
 }
+
 // ros service callback function for toggling Cam
 bool toggleCamCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
 {
@@ -52,29 +53,29 @@ bool toggleCamCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Respo
 // ros service callback to turn on and off camera recording
 bool setRecordCallback(ardrone_autonomy::RecordEnable::Request &request, ardrone_autonomy::RecordEnable::Response& response)
 {
-  char record_command[ARDRONE_DATE_MAXSIZE + 64];
-  int32_t new_codec;
+    char record_command[ARDRONE_DATE_MAXSIZE + 64];
+    int32_t new_codec;
 
-  if( request.enable == true ) {
-    char date[ARDRONE_DATE_MAXSIZE];
-    time_t t = time(NULL);
-    // For some reason the linker can't find this, so we'll just do it manually, cutting and pasting
-    //    ardrone_time2date(t, ARDRONE_FILE_DATE_FORMAT, date);
-    strftime(date, ARDRONE_DATE_MAXSIZE, ARDRONE_FILE_DATE_FORMAT, localtime(&t));
-    snprintf(record_command, sizeof(record_command), "%d,%s", USERBOX_CMD_START, date);
-    new_codec = MP4_360P_H264_720P_CODEC;
-  } else {
-    snprintf(record_command, sizeof(record_command), "%d", USERBOX_CMD_STOP );
-    new_codec = H264_360P_CODEC;
-  }
+    if( request.enable == true ) {
+        char date[ARDRONE_DATE_MAXSIZE];
+        time_t t = time(NULL);
+        // For some reason the linker can't find this, so we'll just do it manually, cutting and pasting
+        //    ardrone_time2date(t, ARDRONE_FILE_DATE_FORMAT, date);
+        strftime(date, ARDRONE_DATE_MAXSIZE, ARDRONE_FILE_DATE_FORMAT, localtime(&t));
+        snprintf(record_command, sizeof(record_command), "%d,%s", USERBOX_CMD_START, date);
+        new_codec = MP4_360P_H264_720P_CODEC;
+    } else {
+        snprintf(record_command, sizeof(record_command), "%d", USERBOX_CMD_STOP );
+        new_codec = H264_360P_CODEC;
+    }
 
-  vp_os_mutex_lock(&twist_lock);
-  ARDRONE_TOOL_CONFIGURATION_ADDEVENT (video_codec, &new_codec, NULL );
-  ARDRONE_TOOL_CONFIGURATION_ADDEVENT (userbox_cmd, record_command, NULL );
-  vp_os_mutex_unlock(&twist_lock);
+    vp_os_mutex_lock(&twist_lock);
+    ARDRONE_TOOL_CONFIGURATION_ADDEVENT (video_codec, &new_codec, NULL );
+    ARDRONE_TOOL_CONFIGURATION_ADDEVENT (userbox_cmd, record_command, NULL );
+    vp_os_mutex_unlock(&twist_lock);
 
-  response.result = true;
-  return true;
+    response.result = true;
+    return true;
 }    
 
 bool setLedAnimationCallback(ardrone_autonomy::LedAnim::Request& request, ardrone_autonomy::LedAnim::Response& response)
@@ -114,8 +115,8 @@ void cmdVelCallback(const geometry_msgs::TwistConstPtr &msg)
     // Main 4DOF
     cmd_vel.linear.x  = max(min(-msg->linear.x, 1.0), -1.0);
     cmd_vel.linear.y  = max(min(-msg->linear.y, 1.0), -1.0);
-	cmd_vel.linear.z  = max(min(msg->linear.z, 1.0), -1.0);
-	cmd_vel.angular.z = max(min(-msg->angular.z, 1.0), -1.0);
+    cmd_vel.linear.z  = max(min(msg->linear.z, 1.0), -1.0);
+    cmd_vel.angular.z = max(min(-msg->angular.z, 1.0), -1.0);
     // These 2DOF just change the auto hover behaviour
     // No bound() required
     cmd_vel.angular.x = msg->angular.x;
@@ -146,13 +147,13 @@ void takeoffCallback(const std_msgs::Empty &msg)
 
 C_RESULT open_teleop(void)
 {
-	return C_OK;
+    return C_OK;
 }
 
 C_RESULT update_teleop(void)
 {
-	// This function *toggles* the emergency state, so we only want to toggle the emergency
-	// state when we are in the emergency state (because we want to get out of it).
+    // This function *toggles* the emergency state, so we only want to toggle the emergency
+    // state when we are in the emergency state (because we want to get out of it).
     vp_os_mutex_lock(&twist_lock);
     if (needs_reset)
     {
@@ -176,38 +177,38 @@ C_RESULT update_teleop(void)
         float front_back = (float) cmd_vel.linear.x;
         float up_down = (float) cmd_vel.linear.z;
         float turn = (float) cmd_vel.angular.z;
-        
+
         bool is_changed = !(
                 (fabs(left_right - old_left_right) < _EPS) && 
                 (fabs(front_back - old_front_back) < _EPS) && 
                 (fabs(up_down - old_up_down) < _EPS) && 
                 (fabs(turn - old_turn) < _EPS)
-                );
-        
+        );
+
         // These lines are for testing, they should be moved to configurations
         // Bit 0 of control_flag == 0: should we hover?
         // Bit 1 of control_flag == 1: should we use combined yaw mode?
-        
+
         int32_t control_flag = 0x00;
         int32_t combined_yaw = 0x00;
-        
+
         // Auto hover detection based on ~0 values for 4DOF cmd_vel
         int32_t hover = (int32_t)
-                (
-                (fabs(left_right) < _EPS) && 
-                (fabs(front_back) < _EPS) && 
-                (fabs(up_down) < _EPS) && 
-                (fabs(turn) < _EPS) &&
-                // Set angular.x or angular.y to a non-zero value to disable entering hover
-                // even when 4DOF control command is ~0
-                (fabs(cmd_vel.angular.x) < _EPS) &&
-                (fabs(cmd_vel.angular.y) < _EPS)
-                );
+                        (
+                                (fabs(left_right) < _EPS) &&
+                                (fabs(front_back) < _EPS) &&
+                                (fabs(up_down) < _EPS) &&
+                                (fabs(turn) < _EPS) &&
+                                // Set angular.x or angular.y to a non-zero value to disable entering hover
+                                // even when 4DOF control command is ~0
+                                (fabs(cmd_vel.angular.x) < _EPS) &&
+                                (fabs(cmd_vel.angular.y) < _EPS)
+                        );
 
         control_flag |= ((1 - hover) << 0);
         control_flag |= (combined_yaw << 1);
         //ROS_INFO (">>> Control Flag: %d", control_flag);
-        
+
         old_left_right = left_right;
         old_front_back = front_back;
         old_up_down = up_down;
@@ -220,18 +221,18 @@ C_RESULT update_teleop(void)
 
     }
     vp_os_mutex_unlock(&twist_lock);
-	return C_OK;
+    return C_OK;
 }
 
 C_RESULT close_teleop(void)
 {
-	return C_OK;
+    return C_OK;
 }
 
 input_device_t teleop = {
-	"Teleop",
-	open_teleop,
-	update_teleop,
-	close_teleop
+        "Teleop",
+        open_teleop,
+        update_teleop,
+        close_teleop
 };
 
