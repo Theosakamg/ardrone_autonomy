@@ -63,6 +63,10 @@ C_RESULT ardrone_tool_init_custom(void)
     ros::param::param("~looprate",looprate,50);
     ros::param::param("~realtime_navdata",realtime_navdata,false);
     ros::param::param("~realtime_video",realtime_video,false);
+    if (!realtime_navdata)
+    {
+        ROS_WARN("realtime navdata is off, odometry may be imprecise");
+    }
 
     // SET SOME NON-STANDARD DEFAULT VALUES FOR THE DRIVER
     // THESE CAN BE OVERWRITTEN BY ROS PARAMETERS (below)
@@ -255,7 +259,7 @@ THREAD_TABLE_ENTRY(video_stage, 31)
 THREAD_TABLE_ENTRY(update_ros, 43)
 THREAD_TABLE_ENTRY(video_recorder, 20)
 THREAD_TABLE_ENTRY(navdata_update, 31)
-//	THREAD_TABLE_ENTRY(ATcodec_Commands_Client, 43)
+//  THREAD_TABLE_ENTRY(ATcodec_Commands_Client, 43)
 THREAD_TABLE_ENTRY(ardrone_control, 31)
 END_THREAD_TABLE
 

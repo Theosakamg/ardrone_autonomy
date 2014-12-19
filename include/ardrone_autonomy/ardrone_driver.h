@@ -44,10 +44,10 @@ enum ROOT_FRAME
 class ARDroneDriver
 {    
 public:
-	ARDroneDriver();
-	~ARDroneDriver();
+    ARDroneDriver();
+    ~ARDroneDriver();
 
-	void run();
+    void run();
     double getRosParam(char* param, double defaultVal);
     bool imuReCalibCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response &response);
 
@@ -67,14 +67,14 @@ private:
     void configureDrone();
 
     ros::NodeHandle node_handle;
-	ros::Subscriber cmd_vel_sub;
-	ros::Subscriber takeoff_sub;
-	ros::Subscriber reset_sub;
-	ros::Subscriber land_sub;
-	image_transport::ImageTransport image_transport;
-	image_transport::CameraPublisher image_pub;
+    ros::Subscriber cmd_vel_sub;
+    ros::Subscriber takeoff_sub;
+    ros::Subscriber reset_sub;
+    ros::Subscriber land_sub;
+    image_transport::ImageTransport image_transport;
+    image_transport::CameraPublisher image_pub;
     image_transport::CameraPublisher hori_pub;
-	image_transport::CameraPublisher vert_pub;
+    image_transport::CameraPublisher vert_pub;
 
     camera_info_manager::CameraInfoManager *cinfo_hori_;
     camera_info_manager::CameraInfoManager *cinfo_vert_;
@@ -86,34 +86,34 @@ private:
 
     tf::TransformBroadcaster tf_broad;
 
-	//ros::Subscriber toggleCam_sub;
-	ros::ServiceServer toggleCam_service;
-	ros::ServiceServer setCamChannel_service;
-	ros::ServiceServer setLedAnimation_service;
+    //ros::Subscriber toggleCam_sub;
+    ros::ServiceServer toggleCam_service;
+    ros::ServiceServer setCamChannel_service;
+    ros::ServiceServer setLedAnimation_service;
     ros::ServiceServer imuReCalib_service;
     ros::ServiceServer flatTrim_service;
     ros::ServiceServer setFlightAnimation_service;
     ros::ServiceServer setRecord_service;
-	
-	/*
-	 * Orange Green : 1
-	 * Orange Yellow: 2
-	 * Orange Blue: 3
-	 */
-	//ros::ServiceServer setEnemyColor_service; 
-	
-	/*
-	 * Indoor: 1
-	 * Oudoor: 0
-	 */
-	//ros::ServiceServer setHullType_service;
+
+    /*
+     * Orange Green : 1
+     * Orange Yellow: 2
+     * Orange Blue: 3
+     */
+    //ros::ServiceServer setEnemyColor_service;
+
+    /*
+     * Indoor: 1
+     * Oudoor: 0
+     */
+    //ros::ServiceServer setHullType_service;
 
     long int last_frame_id;
     long int last_navdata_id;
     long int copy_current_frame_id;
     long int copy_current_navdata_id;
 
-	int flying_state;
+    int flying_state;
 
     bool inited;
     std::string droneFrameId;

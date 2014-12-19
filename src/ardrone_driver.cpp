@@ -110,7 +110,7 @@ ARDroneDriver::ARDroneDriver()
 
     // reset odometry
     odometry[0] = odometry[1] = 0;
-    ros::param::param("~enable_odom",enable_odom,false);
+    ros::param::param("~enable_odom",enable_odom,true);
 
 }
 
@@ -188,7 +188,6 @@ void ARDroneDriver::run()
                     PublishNavdataTypes(navdata_raw, navdata_receive_time); // This function is defined in the template NavdataMessageDefinitions.h template file
                     publish_navdata(navdata_raw, navdata_receive_time);
                     publish_odometry(navdata_raw, navdata_receive_time);
-
                 }
             }
             if (freq_dev == 0) publish_tf();
@@ -780,6 +779,7 @@ void ARDroneDriver::publish_tf()
     tf_odom.stamp_ = ros::Time::now();
     tf_broad.sendTransform(tf_base_front);
     tf_broad.sendTransform(tf_base_bottom);
+
     if (enable_odom) {
         tf_broad.sendTransform(tf_odom);
     }
@@ -797,6 +797,7 @@ void ARDroneDriver::publish_odometry(navdata_unpacked_t &navdata_raw, const ros:
         }
         last_receive_time = navdata_receive_time;
 
+        nav_msgs::Odometry odo_msg;
         odo_msg.header.stamp = navdata_receive_time;
         odo_msg.header.frame_id = "odom";
         odo_msg.child_frame_id = droneFrameBase;
@@ -813,7 +814,7 @@ void ARDroneDriver::publish_odometry(navdata_unpacked_t &navdata_raw, const ros:
         odo_msg.twist.twist.linear.y = -navdata_raw.navdata_demo.vy / 1000.0;
         odo_msg.twist.twist.linear.z = -navdata_raw.navdata_demo.vz / 1000.0;
 
-        //odo_pub.publish(odo_msg);
+        odo_pub.publish(odo_msg);
 
         tf::Vector3 t;
         tf::pointMsgToTF(odo_msg.pose.pose.position, t);
